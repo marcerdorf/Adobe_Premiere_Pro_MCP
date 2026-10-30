@@ -7,6 +7,7 @@ const requiredPaths = [
   'dist/cli.js',
   'cep-plugin/CSXS/manifest.xml',
   'cep-plugin/bridge-cep.js',
+  'cep-plugin/ui.js',
   'scripts/install-macos.sh',
   'scripts/install-windows.ps1',
   'scripts/doctor-macos.sh',

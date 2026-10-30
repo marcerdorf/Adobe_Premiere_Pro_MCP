@@ -1,657 +1,672 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MCP Bridge (CEP)</title>
+    <title>MCP Bridge</title>
     <style>
+        /* Spectrum-artige Tokens, dunkel. ui.js übernimmt die Hintergrundfarbe aus Premiere. */
         :root {
-            --bg-0: #0b1218;
-            --bg-1: #121c25;
-            --panel: rgba(20, 31, 41, 0.86);
-            --panel-border: rgba(129, 170, 197, 0.18);
-            --panel-shadow: 0 18px 40px rgba(1, 10, 18, 0.48);
-            --text-0: #f4f8fb;
-            --text-1: #9cb2c3;
-            --text-2: #6e8393;
-            --accent: #5fd3ff;
-            --accent-strong: #11aef0;
-            --accent-soft: rgba(95, 211, 255, 0.16);
-            --success: #61e8a6;
-            --warn: #ffd76b;
-            --error: #ff7b7b;
-            --input: rgba(9, 17, 25, 0.72);
-            --button-dark: rgba(13, 23, 32, 0.72);
+            --bg: #232323;
+            --layer-1: #2b2b2b;
+            --layer-2: #323232;
+            --field: #1b1b1b;
+            --border: #3d3d3d;
+            --border-strong: #5a5a5a;
+            --text: #e8e8e8;
+            --text-sub: #b4b4b4;
+            --text-muted: #8c8c8c;
+            --accent: #3f74f6;
+            --accent-hover: #5486ff;
+            --accent-down: #3263de;
+            --positive: #2fb380;
+            --negative: #f0555d;
+            --notice: #f29423;
+            --informative: #5a8dff;
+            --neutral: #8c8c8c;
+            --btn-secondary: #3a3a3a;
+            --btn-secondary-hover: #444444;
+            --focus: #5486ff;
+            --mono: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         }
 
-        * {
-            box-sizing: border-box;
+        :root[data-theme="light"] {
+            --layer-1: rgba(0, 0, 0, 0.04);
+            --layer-2: rgba(0, 0, 0, 0.07);
+            --field: #ffffff;
+            --border: #d0d0d0;
+            --border-strong: #8f8f8f;
+            --text: #1f1f1f;
+            --text-sub: #464646;
+            --text-muted: #6d6d6d;
+            --btn-secondary: #e3e3e3;
+            --btn-secondary-hover: #d6d6d6;
         }
 
-        html,
+        * { box-sizing: border-box; }
+
+        html, body { margin: 0; height: 100%; }
+
         body {
-            margin: 0;
-            min-height: 100%;
-        }
-
-        body {
-            font-family: "Avenir Next", "Helvetica Neue", "Segoe UI", sans-serif;
-            color: var(--text-0);
-            padding: 16px;
-            background:
-                radial-gradient(circle at top right, rgba(17, 174, 240, 0.2), transparent 34%),
-                radial-gradient(circle at top left, rgba(97, 232, 166, 0.14), transparent 28%),
-                linear-gradient(165deg, var(--bg-0), var(--bg-1));
-        }
-
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            background-image:
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 22px 22px;
-            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.45), transparent 70%);
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Adobe Clean", "Source Sans 3", "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            -webkit-font-smoothing: antialiased;
+            overflow-y: auto;
         }
 
         .shell {
-            max-width: 460px;
+            max-width: 480px;
             margin: 0 auto;
-            position: relative;
-            z-index: 1;
+            padding: 12px 12px 16px;
         }
 
-        .hero {
-            position: relative;
-            overflow: hidden;
-            border: 1px solid var(--panel-border);
-            border-radius: 20px;
-            padding: 18px 18px 16px;
-            margin-bottom: 14px;
-            background:
-                linear-gradient(135deg, rgba(95, 211, 255, 0.14), rgba(97, 232, 166, 0.06) 42%, rgba(7, 15, 22, 0.9) 82%),
-                var(--panel);
-            box-shadow: var(--panel-shadow);
-        }
-
-        .hero::after {
-            content: "";
-            position: absolute;
-            width: 140px;
-            height: 140px;
-            border-radius: 999px;
-            right: -32px;
-            top: -46px;
-            background: radial-gradient(circle, rgba(95, 211, 255, 0.34), transparent 70%);
-            pointer-events: none;
-        }
-
-        .eyebrow {
-            display: inline-block;
-            font-size: 11px;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: var(--accent);
-            margin-bottom: 10px;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 24px;
-            line-height: 1.05;
-            letter-spacing: -0.02em;
-        }
-
-        .hero-copy {
-            margin-top: 8px;
-            color: var(--text-1);
-            font-size: 12px;
-            line-height: 1.55;
-            max-width: 330px;
-        }
-
-        .hero-meta {
-            margin-top: 14px;
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 10px;
-        }
-
-        .meta-card {
-            border: 1px solid rgba(129, 170, 197, 0.14);
-            border-radius: 14px;
-            padding: 10px 11px;
-            background: rgba(7, 15, 22, 0.36);
-        }
-
-        .meta-label {
-            display: block;
-            font-size: 10px;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--text-2);
-            margin-bottom: 4px;
-        }
-
-        .meta-value {
-            display: block;
-            font-size: 12px;
-            color: var(--text-0);
-            font-weight: 600;
-        }
-
-        .panel {
-            border: 1px solid var(--panel-border);
-            border-radius: 18px;
-            padding: 15px;
-            margin-bottom: 12px;
-            background: var(--panel);
-            box-shadow: var(--panel-shadow);
-            backdrop-filter: blur(8px);
-        }
-
-        .panel-title {
+        /* Kopfzeile */
+        .header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
+            gap: 8px;
+            padding-bottom: 12px;
         }
 
-        .panel-title h2 {
+        .header-icon {
+            width: 18px;
+            height: 18px;
+            color: var(--text-sub);
+            flex: 0 0 auto;
+        }
+
+        .header h1 {
             margin: 0;
-            font-size: 13px;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
+            font-size: 14px;
             font-weight: 700;
-            color: var(--text-1);
+            flex: 1 1 auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .panel-title span {
+        .badge {
             font-size: 11px;
-            color: var(--text-2);
+            font-weight: 600;
+            line-height: 18px;
+            padding: 0 7px;
+            border-radius: 9px;
+            background: var(--layer-2);
+            color: var(--text-sub);
+            font-variant-numeric: tabular-nums;
         }
 
-        .status-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
+        .badge:empty { display: none; }
+
+        /* Status */
+        .status-list {
+            background: var(--layer-1);
+            border-radius: 8px;
+            padding: 2px 12px;
         }
 
-        .status-card {
-            min-height: 82px;
-            padding: 12px;
-            border-radius: 16px;
-            border: 1px solid rgba(129, 170, 197, 0.12);
-            background:
-                linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 58%),
-                rgba(9, 17, 25, 0.56);
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 32px;
         }
 
-        .status-caption {
-            font-size: 10px;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--text-2);
-            margin-bottom: 10px;
-        }
+        .status-row + .status-row { border-top: 1px solid var(--border); }
+
+        .status-label { color: var(--text-sub); }
 
         .status-indicator {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            min-width: 0;
         }
 
         .status-dot {
-            width: 12px;
-            height: 12px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             flex: 0 0 auto;
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.04);
+            background: var(--neutral);
         }
 
-        .status-dot.connected {
-            background: var(--success);
-            box-shadow: 0 0 0 4px rgba(97, 232, 166, 0.12), 0 0 14px rgba(97, 232, 166, 0.35);
-        }
-
-        .status-dot.disconnected {
-            background: var(--error);
-            box-shadow: 0 0 0 4px rgba(255, 123, 123, 0.12), 0 0 14px rgba(255, 123, 123, 0.28);
-        }
+        .status-dot.connected { background: var(--positive); }
+        .status-dot.disconnected { background: var(--negative); }
 
         .status-text {
-            display: block;
-            font-size: 13px;
-            line-height: 1.35;
-            color: var(--text-0);
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .config-copy,
-        .micro-copy {
-            font-size: 11px;
-            line-height: 1.55;
-            color: var(--text-2);
-            margin-bottom: 10px;
-        }
-
-        label {
-            display: block;
-            font-size: 10px;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--text-2);
-            margin-bottom: 8px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 12px 13px;
-            border: 1px solid rgba(129, 170, 197, 0.14);
-            border-radius: 12px;
-            background: var(--input);
-            color: var(--text-0);
-            font-size: 13px;
-            outline: none;
-            transition: border-color 0.18s ease, box-shadow 0.18s ease;
-        }
-
-        input[type="text"]:focus {
-            border-color: rgba(95, 211, 255, 0.48);
-            box-shadow: 0 0 0 3px rgba(95, 211, 255, 0.1);
-        }
-
-        .toggle-row {
+        /* Buttons */
+        .actions {
             display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-top: 14px;
-            padding: 11px 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(129, 170, 197, 0.14);
-            background: rgba(9, 17, 25, 0.56);
-            cursor: pointer;
-            letter-spacing: 0;
-            text-transform: none;
-            color: var(--text-1);
+            gap: 8px;
+            margin: 12px 0 16px;
         }
 
-        .toggle-row input[type="checkbox"] {
-            margin-top: 2px;
-            width: 15px;
-            height: 15px;
-            flex: 0 0 auto;
-            accent-color: var(--accent-strong);
-        }
-
-        .toggle-copy {
-            min-width: 0;
-        }
-
-        .toggle-title {
-            display: block;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-0);
-            margin-bottom: 4px;
-        }
-
-        .toggle-help {
-            display: block;
-            font-size: 11px;
-            line-height: 1.5;
-            color: var(--text-2);
-            font-weight: 400;
-        }
-
-        .button-row,
-        .button-grid {
-            display: grid;
-            gap: 10px;
-        }
-
-        .button-row {
-            grid-template-columns: 1fr;
-            margin-top: 10px;
-        }
-
-        .button-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
+        .actions > button { flex: 1 1 0; }
 
         button {
+            -webkit-appearance: none;
             appearance: none;
-            border: 0;
-            border-radius: 12px;
-            padding: 12px 14px;
+            font: inherit;
             font-size: 12px;
             font-weight: 700;
-            letter-spacing: 0.03em;
-            color: var(--text-0);
+            height: 28px;
+            padding: 0 14px;
+            border: 0;
+            border-radius: 14px;
             cursor: pointer;
-            transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, opacity 0.16s ease;
-            background: var(--button-dark);
-            box-shadow: inset 0 0 0 1px rgba(129, 170, 197, 0.14);
+            color: var(--text);
+            background: var(--btn-secondary);
+            white-space: nowrap;
+            transition: background-color 0.13s ease;
         }
 
-        button:hover:enabled {
-            transform: translateY(-1px);
+        button:hover:enabled { background: var(--btn-secondary-hover); }
+
+        button:focus { outline: none; }
+        button:focus-visible {
+            outline: 2px solid var(--focus);
+            outline-offset: 2px;
         }
 
         button:disabled {
-            cursor: not-allowed;
-            opacity: 0.4;
+            cursor: default;
+            opacity: 0.45;
         }
 
-        .primary {
-            background:
-                linear-gradient(135deg, var(--accent), var(--accent-strong));
-            color: #081119;
-            box-shadow:
-                inset 0 0 0 1px rgba(255, 255, 255, 0.18),
-                0 10px 20px rgba(17, 174, 240, 0.28);
+        button.cta {
+            background: var(--accent);
+            color: #ffffff;
         }
 
-        .secondary {
-            background:
-                linear-gradient(135deg, rgba(97, 232, 166, 0.16), rgba(17, 174, 240, 0.08)),
-                var(--button-dark);
+        button.cta:hover:enabled { background: var(--accent-hover); }
+        button.cta:active:enabled { background: var(--accent-down); }
+
+        button.quiet {
+            background: transparent;
+            color: var(--text-sub);
+            height: 24px;
+            padding: 0 8px;
+            border-radius: 12px;
+            font-weight: 600;
         }
 
-        button.utility {
-            background: rgba(8, 17, 26, 0.92);
+        button.quiet:hover:enabled {
+            background: var(--layer-2);
+            color: var(--text);
         }
 
-        .update-banner {
-            border-color: rgba(255, 215, 107, 0.35);
-            background:
-                linear-gradient(135deg, rgba(255, 215, 107, 0.14), rgba(17, 174, 240, 0.06) 48%, var(--panel));
+        /* Start und Stop teilen sich einen Platz: sichtbar ist immer nur der aktive Button */
+        #startButton:disabled,
+        #stopButton:disabled { display: none; }
+
+        /* Hinweis-Banner (Update) */
+        .alert {
+            border: 2px solid var(--notice);
+            border-radius: 8px;
+            padding: 10px 12px 10px;
+            margin-bottom: 12px;
         }
 
-        .update-banner[hidden] {
-            display: none;
-        }
+        .alert[hidden] { display: none; }
 
-        .update-actions {
-            margin-top: 12px;
-        }
-
-        .update-command-row {
+        .alert-head {
             display: flex;
-            align-items: stretch;
+            align-items: center;
             gap: 8px;
-            margin-top: 12px;
+            font-weight: 700;
+            margin-bottom: 4px;
         }
 
-        .update-command-row input[type="text"] {
+        .alert-head svg {
+            width: 16px;
+            height: 16px;
+            color: var(--notice);
+            flex: 0 0 auto;
+        }
+
+        .alert-version {
+            margin-left: auto;
+            font-weight: 600;
+            color: var(--text-sub);
+        }
+
+        .alert-copy { color: var(--text-sub); }
+
+        .command-field {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .command-field input {
             flex: 1 1 auto;
             min-width: 0;
-            padding: 10px 12px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-family: var(--mono);
             font-size: 11px;
-            letter-spacing: 0;
-            white-space: nowrap;
         }
 
-        button.update-copy {
-            flex: 0 0 42px;
-            width: 42px;
+        .command-field button {
+            flex: 0 0 28px;
+            width: 28px;
             padding: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--text-0);
+            border-radius: 6px;
         }
 
-        button.update-copy svg {
-            width: 16px;
-            height: 16px;
+        .command-field button svg { width: 14px; height: 14px; }
+
+        .alert-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .alert-status {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        /* Akkordeon */
+        details { border-top: 1px solid var(--border); }
+        details:last-of-type { border-bottom: 1px solid var(--border); }
+
+        summary {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 36px;
+            cursor: pointer;
+            font-weight: 700;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        summary::-webkit-details-marker { display: none; }
+
+        summary:focus { outline: none; }
+        summary:focus-visible {
+            outline: 2px solid var(--focus);
+            outline-offset: -2px;
+            border-radius: 4px;
+        }
+
+        .chevron {
+            width: 10px;
+            height: 10px;
+            color: var(--text-sub);
+            transition: transform 0.15s ease;
+            flex: 0 0 auto;
+        }
+
+        details[open] > summary .chevron { transform: rotate(90deg); }
+
+        .summary-title { flex: 1 1 auto; }
+
+        .summary-aside {
+            font-weight: 400;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .section-body { padding: 0 0 12px; }
+
+        /* Formular */
+        .field-label {
             display: block;
+            color: var(--text-sub);
+            margin-bottom: 4px;
         }
 
-        .command-queue,
-        .log-container {
-            border-radius: 14px;
-            border: 1px solid rgba(129, 170, 197, 0.1);
-            background: rgba(8, 15, 22, 0.82);
-            padding: 8px;
+        input[type="text"] {
+            width: 100%;
+            height: 28px;
+            padding: 0 8px;
+            font: inherit;
+            font-size: 12px;
+            color: var(--text);
+            background: var(--field);
+            border: 1px solid var(--border-strong);
+            border-radius: 6px;
+            outline: none;
         }
 
+        input[type="text"]:hover { border-color: var(--text-muted); }
+
+        input[type="text"]:focus {
+            border-color: var(--focus);
+            box-shadow: 0 0 0 1px var(--focus);
+        }
+
+        .help {
+            color: var(--text-muted);
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        /* Switch */
+        .switch {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: 14px;
+            cursor: pointer;
+        }
+
+        .switch input {
+            -webkit-appearance: none;
+            appearance: none;
+            flex: 0 0 auto;
+            position: relative;
+            width: 26px;
+            height: 14px;
+            margin: 1px 0 0;
+            border-radius: 7px;
+            background: var(--border-strong);
+            cursor: pointer;
+            transition: background-color 0.13s ease;
+        }
+
+        .switch input::after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ffffff;
+            transition: transform 0.13s ease;
+        }
+
+        .switch input:checked { background: var(--accent); }
+        .switch input:checked::after { transform: translateX(12px); }
+
+        .switch input:focus { outline: none; }
+        .switch input:focus-visible {
+            outline: 2px solid var(--focus);
+            outline-offset: 2px;
+        }
+
+        .switch-title {
+            display: block;
+            font-weight: 600;
+        }
+
+        .switch-help {
+            display: block;
+            color: var(--text-muted);
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 12px;
+        }
+
+        /* Warteschlange */
         .command-queue {
-            max-height: 164px;
-            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
 
         .command-item {
             display: flex;
             align-items: center;
-            justify-content: space-between;
             gap: 10px;
-            padding: 10px 11px;
-            margin-bottom: 6px;
-            border-radius: 12px;
-            background: rgba(16, 26, 35, 0.72);
+            min-height: 28px;
+            padding: 0 8px;
+            border-radius: 6px;
+            background: var(--layer-1);
         }
 
-        .command-item:last-child {
-            margin-bottom: 0;
+        .command-item.is-empty {
+            justify-content: center;
+            background: transparent;
+            border: 1px dashed var(--border);
+            min-height: 36px;
+        }
+
+        .command-item.is-empty .command-label {
+            font-family: inherit;
+            font-size: 12px;
+            color: var(--text-muted);
+            flex: 0 1 auto;
         }
 
         .command-label {
             flex: 1 1 auto;
             min-width: 0;
-            color: var(--text-1);
-            font-size: 12px;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-sub);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         .command-status {
-            padding: 4px 8px;
-            border-radius: 999px;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 0 0 auto;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-sub);
         }
 
-        .command-status.pending {
-            background: rgba(255, 215, 107, 0.14);
-            color: var(--warn);
+        .command-status::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--neutral);
         }
 
-        .command-status.executing {
-            background: var(--accent-soft);
-            color: var(--accent);
-        }
+        .command-status.pending::before { background: var(--notice); }
+        .command-status.executing::before { background: var(--informative); animation: pulse 1s ease-in-out infinite; }
+        .command-status.completed::before { background: var(--positive); }
 
-        .command-status.completed {
-            background: rgba(97, 232, 166, 0.14);
-            color: var(--success);
-        }
+        @keyframes pulse { 50% { opacity: 0.35; } }
 
+        /* Protokoll */
         .log-container {
-            max-height: 220px;
+            max-height: 240px;
             overflow-y: auto;
+            background: var(--field);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 0;
         }
 
         .log-entry {
+            display: flex;
+            gap: 8px;
+            padding: 3px 8px 3px 10px;
+            font-family: var(--mono);
             font-size: 11px;
-            line-height: 1.5;
-            margin-bottom: 7px;
-            padding: 8px 10px;
-            border-radius: 10px;
-            color: var(--text-1);
-            background: rgba(15, 24, 33, 0.5);
+            line-height: 1.45;
+            color: var(--text-sub);
+            border-left: 2px solid transparent;
             word-break: break-word;
         }
 
-        .log-entry:last-child {
-            margin-bottom: 0;
-        }
-
-        .log-entry.info {
-            border-left: 3px solid rgba(95, 211, 255, 0.6);
-        }
-
         .log-entry.warning {
-            border-left: 3px solid rgba(255, 215, 107, 0.75);
-            color: #f4d889;
+            border-left-color: var(--notice);
+            color: var(--text);
         }
 
         .log-entry.error {
-            border-left: 3px solid rgba(255, 123, 123, 0.8);
-            color: #ffadad;
+            border-left-color: var(--negative);
+            color: var(--text);
         }
 
-        .footer-note {
-            text-align: center;
-            color: var(--text-2);
-            font-size: 10px;
-            letter-spacing: 0.09em;
-            text-transform: uppercase;
-            padding: 4px 0 2px;
+        .log-time {
+            flex: 0 0 auto;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .log-msg { min-width: 0; }
+
+        .log-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 6px;
+        }
+
+        /* Scrollbalken */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background-color: var(--border-strong);
+            border-radius: 5px;
+            border: 3px solid transparent;
+            background-clip: content-box;
+        }
+        ::-webkit-scrollbar-thumb:hover { background-color: var(--text-muted); }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                transition: none !important;
+                animation: none !important;
+            }
         }
     </style>
 </head>
 <body>
     <div class="shell">
-        <section class="hero">
-            <div class="eyebrow">Premiere Automation</div>
-            <h1>MCP Bridge (CEP)</h1>
-            <div class="hero-copy">
-                Real-time file bridge for Codex and other MCP clients. Keep the temp path aligned, start the bridge, and the panel will execute commands inside Premiere Pro.
-            </div>
-            <div class="hero-meta">
-                <div class="meta-card">
-                    <span class="meta-label">Mode</span>
-                    <span class="meta-value">CEP Runtime</span>
-                </div>
-                <div class="meta-card">
-                    <span class="meta-label">Path</span>
-                    <span class="meta-value">/tmp bridge</span>
-                </div>
-                <div class="meta-card">
-                    <span class="meta-label">Control</span>
-                    <span class="meta-value">Live Queue</span>
-                </div>
-            </div>
-        </section>
+        <header class="header">
+            <svg class="header-icon" viewBox="0 0 18 18" aria-hidden="true">
+                <path d="M2 12.5h14M4 12.5V8.6M14 12.5V8.6M2.5 7.8C5 4.6 13 4.6 15.5 7.8M7 12.5V6.4M11 12.5V6.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <h1>MCP Bridge</h1>
+            <span class="badge" id="panelVersion"></span>
+        </header>
 
-        <section class="panel update-banner" id="updateBanner" hidden>
-            <div class="panel-title">
-                <h2>Update recommended</h2>
-                <span id="updateBannerVersion"></span>
+        <section class="alert" id="updateBanner" hidden>
+            <div class="alert-head">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8 1.6 15 14H1L8 1.6Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                    <path d="M8 6.2v3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <circle cx="8" cy="11.8" r="0.9" fill="currentColor"/>
+                </svg>
+                <span>Update verfügbar</span>
+                <span class="alert-version" id="updateBannerVersion"></span>
             </div>
-            <div class="micro-copy" id="updateBannerCopy" style="margin-bottom: 0;">
-                A newer MCP Bridge is available. Copy this, run it in a terminal, then reload this panel.
-            </div>
-            <div class="update-command-row">
-                <input type="text" id="updateCommandInput" readonly value="npm install -g adobe-premiere-pro-mcp@latest &amp;&amp; premiere-pro-mcp --install-cep" aria-label="Update command">
-                <button class="update-copy" type="button" id="updateCopyButton" onclick="copyUpdateCommand()" title="Copy command" aria-label="Copy command">
+            <div class="alert-copy" id="updateBannerCopy">Befehl kopieren, im Terminal ausführen, danach das Panel neu laden.</div>
+            <div class="command-field">
+                <input type="text" id="updateCommandInput" readonly value="npm install -g adobe-premiere-pro-mcp@latest &amp;&amp; premiere-pro-mcp --install-cep" aria-label="Update-Befehl">
+                <button type="button" id="updateCopyButton" onclick="copyUpdateCommand()" title="Befehl kopieren" aria-label="Befehl kopieren">
                     <svg viewBox="0 0 16 16" aria-hidden="true">
                         <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"></rect>
                         <path d="M10.5 5.5V4A1.5 1.5 0 0 0 9 2.5H4A1.5 1.5 0 0 0 2.5 4v5A1.5 1.5 0 0 0 4 10.5h1.5" fill="none" stroke="currentColor" stroke-width="1.4"></path>
                     </svg>
                 </button>
             </div>
-            <div class="button-row update-actions">
-                <button class="utility" type="button" id="updateLaterButton" onclick="updateLater()">Later</button>
-            </div>
-            <div class="micro-copy" id="updateBannerStatus" style="margin-top: 10px; margin-bottom: 0;"></div>
-        </section>
-
-        <section class="panel">
-            <div class="panel-title">
-                <h2>Status</h2>
-                <span>Live bridge + host checks</span>
-            </div>
-            <div class="status-grid">
-                <div class="status-card">
-                    <div class="status-caption">Bridge</div>
-                    <div class="status-indicator">
-                        <div class="status-dot disconnected" id="connectionStatus"></div>
-                        <span class="status-text" id="connectionText">Disconnected</span>
-                    </div>
-                </div>
-                <div class="status-card">
-                    <div class="status-caption">Premiere</div>
-                    <div class="status-indicator">
-                        <div class="status-dot disconnected" id="serverStatus"></div>
-                        <span class="status-text" id="serverText">Waiting for Premiere</span>
-                    </div>
-                </div>
+            <div class="alert-foot">
+                <span class="alert-status" id="updateBannerStatus"></span>
+                <button class="quiet" type="button" id="updateLaterButton" onclick="updateLater()">Später</button>
             </div>
         </section>
 
-        <section class="panel">
-            <div class="panel-title">
-                <h2>Configuration</h2>
-                <span>Shared temp directory</span>
-            </div>
-            <div class="config-copy">
-                This must match the `PREMIERE_TEMP_DIR` value used by your MCP client.
-            </div>
-            <label for="tempDirectory">Temp Directory</label>
-            <input type="text" id="tempDirectory" placeholder="Temp Directory (e.g. /tmp/premiere-mcp-bridge)">
-            <label class="toggle-row" for="telemetryEnabled">
-                <input type="checkbox" id="telemetryEnabled" checked onchange="saveTelemetryPreference()">
-                <span class="toggle-copy">
-                    <span class="toggle-title">Share anonymous usage data</span>
-                    <span class="toggle-help">On by default. Sends tool names, success or failure, duration, OS, and version. Never sends project names, media paths, or arguments. Uncheck to opt out.</span>
+        <section class="status-list" aria-label="Status">
+            <div class="status-row">
+                <span class="status-label">Bridge</span>
+                <span class="status-indicator">
+                    <span class="status-dot disconnected" id="connectionStatus"></span>
+                    <span class="status-text" id="connectionText">Getrennt</span>
                 </span>
-            </label>
-            <div class="button-row">
-                <button class="primary" onclick="saveConfig()">Save Configuration</button>
+            </div>
+            <div class="status-row">
+                <span class="status-label">Premiere Pro</span>
+                <span class="status-indicator">
+                    <span class="status-dot disconnected" id="serverStatus"></span>
+                    <span class="status-text" id="serverText">Wartet</span>
+                </span>
             </div>
         </section>
 
-        <section class="panel">
-            <div class="panel-title">
-                <h2>Controls</h2>
-                <span>Start, stop, inspect</span>
-            </div>
-            <div class="button-grid">
-                <button class="primary" onclick="startBridge()" id="startButton">Start Bridge</button>
-                <button class="secondary" onclick="stopBridge()" id="stopButton" disabled>Stop Bridge</button>
-                <button class="secondary" onclick="runDiagnostics()" id="diagnosticsButton">Run Diagnostics</button>
-                <button class="utility" onclick="clearLog()" id="clearButton">Clear Log</button>
-            </div>
-            <div class="micro-copy" style="margin-top: 10px; margin-bottom: 0;">
-                Reload the panel after updating bridge code so Premiere is not running stale JavaScript in memory. The bridge starts automatically when this panel loads. Stop Bridge still works if you need to pause it. Connect from Codex, Claude, or another MCP client using the same temp directory.
-            </div>
-        </section>
+        <div class="actions">
+            <button class="cta" type="button" onclick="startBridge()" id="startButton">Bridge starten</button>
+            <button type="button" onclick="stopBridge()" id="stopButton" disabled>Bridge stoppen</button>
+            <button type="button" onclick="runDiagnostics()" id="diagnosticsButton">Diagnose</button>
+        </div>
 
-        <section class="panel">
-            <div class="panel-title">
-                <h2>Command Queue</h2>
-                <span>Most recent tasks</span>
-            </div>
-            <div class="command-queue" id="commandQueue">
-                <div class="command-item">
-                    <span class="command-label">No commands in queue</span>
+        <details open>
+            <summary>
+                <svg class="chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 1.5 7 5 3.5 8.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="summary-title">Warteschlange</span>
+                <span class="summary-aside">letzte 5</span>
+            </summary>
+            <div class="section-body">
+                <div class="command-queue" id="commandQueue">
+                    <div class="command-item is-empty"><span class="command-label">Keine Befehle in der Warteschlange</span></div>
                 </div>
             </div>
-        </section>
+        </details>
 
-        <section class="panel">
-            <div class="panel-title">
-                <h2>Activity Log</h2>
-                <span>Recent messages</span>
+        <details open>
+            <summary>
+                <svg class="chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 1.5 7 5 3.5 8.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="summary-title">Protokoll</span>
+            </summary>
+            <div class="section-body">
+                <div class="log-container" id="logContainer">
+                    <div class="log-entry info"><span class="log-msg">Panel geladen. Die Bridge startet automatisch.</span></div>
+                </div>
+                <div class="log-toolbar">
+                    <button class="quiet" type="button" onclick="clearLog()" id="clearButton">Protokoll leeren</button>
+                </div>
             </div>
-            <div class="log-container" id="logContainer">
-                <div class="log-entry info">MCP Bridge (CEP) loaded. The bridge starts automatically when this panel opens.</div>
-                <div class="log-entry info">Set the temp directory to match your MCP client if it is not already /tmp/premiere-mcp-bridge.</div>
-            </div>
-        </section>
+        </details>
 
-        <div class="footer-note">MCP Bridge CEP Panel</div>
+        <details>
+            <summary>
+                <svg class="chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 1.5 7 5 3.5 8.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="summary-title">Einstellungen</span>
+            </summary>
+            <div class="section-body">
+                <label class="field-label" for="tempDirectory">Bridge-Verzeichnis</label>
+                <input type="text" id="tempDirectory" placeholder="/tmp/premiere-mcp-bridge" spellcheck="false">
+                <div class="help">Muss mit PREMIERE_TEMP_DIR im MCP-Client übereinstimmen.</div>
+
+                <label class="switch" for="telemetryEnabled">
+                    <input type="checkbox" id="telemetryEnabled" onchange="saveTelemetryPreference()">
+                    <span>
+                        <span class="switch-title">Anonyme Nutzungsdaten senden</span>
+                        <span class="switch-help">Toolnamen, Erfolg, Dauer, Betriebssystem und Version. Keine Projektnamen, Pfade oder Argumente.</span>
+                    </span>
+                </label>
+
+                <div class="form-actions">
+                    <button class="cta" type="button" onclick="saveConfig()">Speichern</button>
+                </div>
+                <div class="help">Nach einem Update das Panel neu laden, damit Premiere keinen alten Code im Speicher hält.</div>
+            </div>
+        </details>
     </div>
 
     <script src="CSInterface.js"></script>
     <script src="bridge-cep.js"></script>
+    <script src="ui.js"></script>
 </body>
 </html>
